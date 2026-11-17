@@ -40,3 +40,20 @@ Added after an internal review of the methods, before any confirmatory scoring (
 a content-digest check of the confirmatory cohorts and a checkpoint check before scoring; a
 bias-corrected noise-free reference; the nine seed pairings for P2; regional RMSE per forecast-gap
 bin; median epoch times; and a same-session bfloat16 versus float32 parity run. All are descriptive.
+
+## Supplementary analyses after the loss (not part of the frozen protocol)
+
+- **S1 (reanalysis of the earlier classification study) was re-implemented** (`admod/eaddls.py`).
+  The previous revision's cohort generator and analysis code were not recoverable at reasonable cost
+  from the session record. The new generator uses only the published OASIS-2 design counts; every
+  other distribution is an assumption listed in `ASSUMED` and printed in the supplement. Its numbers
+  differ from the previous revision's and replace them.
+- **S2 (exploratory, pre-freeze results) was recomputed** for the classical models
+  (`admod/explore_s2.py`). The nine values recorded in the previous revision's README (regional
+  linear, cross-region model, noise-free reference on the three development cohorts) are reproduced
+  to two decimals. The previous revision's ADmod models were not retrained; S2 prints their recorded
+  mean and SD over 3 seeds.
+- **Side jobs pause training.** On two cores, a concurrent CPU job slowed training about tenfold
+  (thread contention). `side_run.sh` stops the training process (SIGSTOP), runs the side job and
+  resumes training (SIGCONT); pauses are logged in `runs_ax/logs/pauses.log`. Training results do not
+  depend on pauses; the affected epochs' wall times are inflated, which the median epoch time absorbs.

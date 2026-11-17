@@ -141,12 +141,13 @@ def number_macros(res: dict, sens: dict | None, post: dict | None, cal: dict, pa
     m("bestNinety", sum(e >= 90 for e in allbest)); m("nModels", len(allbest))
     lam = res["ridge_lambda"]
     m("ridgeLambda", f"{lam:g}" if lam >= 0.01 else rf"10^{{{int(round(np.log10(lam)))}}}" if abs(np.log10(lam) - round(np.log10(lam))) < 1e-9 else f"{lam:g}")
-    b, f = parity["bf16"], parity["fp32"]
-    med = lambda d: float(np.median([r["sec"] for r in d["log"]]))
-    m("bfSpeed", f"{med(f) / med(b):.1f}")
-    m("bfValLoss", f"{b['best_val_loss']:.4f}"); m("fpValLoss", f"{f['best_val_loss']:.4f}")
-    r2at = lambda d: [r for r in d["log"] if r["epoch"] == d["best_epoch"]][0]["val_regional_r2"]
-    m("bfValRtwo", f"{r2at(b):.3f}"); m("fpValRtwo", f"{r2at(f):.3f}")
+    if parity:  # absent until the post hoc parity runs finish
+        b, f = parity["bf16"], parity["fp32"]
+        med = lambda d: float(np.median([r["sec"] for r in d["log"]]))
+        m("bfSpeed", f"{med(f) / med(b):.1f}")
+        m("bfValLoss", f"{b['best_val_loss']:.4f}"); m("fpValLoss", f"{f['best_val_loss']:.4f}")
+        r2at = lambda d: [r for r in d["log"] if r["epoch"] == d["best_epoch"]][0]["val_regional_r2"]
+        m("bfValRtwo", f"{r2at(b):.3f}"); m("fpValRtwo", f"{r2at(f):.3f}")
     for k, v in commits.items():
         m(k, v)
     m("codeAvailability", "The code is provided with this submission as supplementary material.")
@@ -177,7 +178,7 @@ def number_macros(res: dict, sens: dict | None, post: dict | None, cal: dict, pa
 # ------------------------------------------------------------------ tables
 def table_primary(res: dict) -> list[str]:
     L = [r"\begin{table}[!t]", r"\caption{Primary hypotheses (frozen protocol). $\Delta$: regional change $R^2$ of ADmod minus comparator; 95\% paired subject-bootstrap interval; one-sided bootstrap $p$ ($B=10{,}000$), Holm-corrected over P1 to P4 at $\alpha=0.025$.}",
-         r"\label{tab:primary}", r"\centering", r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{@{}lllcc@{}}", r"\toprule",
+         r"\label{tab:primary}", r"\centering", r"\setlength{\tabcolsep}{3pt}", r"\resizebox{\columnwidth}{!}{%", r"\begin{tabular}{@{}lllcc@{}}", r"\toprule",
          r"& Cohort, comparator & Test & $\Delta$ [95\% CI] & Holm $p$ \\", r"\midrule"]
     names = {"Regional linear + WM (2 scans)": "regional linear + WM", "Plain 3D U-Net": "plain 3D U-Net",
              "Cross-region ridge (2 scans)": "cross-region ridge"}
@@ -185,7 +186,7 @@ def table_primary(res: dict) -> list[str]:
         test = "superiority" if v["type"] == "superiority" else r"non-inf.\ ($-0.05$)"
         mark = r"$^{\ast}$" if v["reject"] else ""
         L.append(rf"{h} & {v['cohort']}, {names[v['comparator']]} & {test} & {sgn3(v['delta_regional_r2'])} [{f3(v['ci95'][0])}, {f3(v['ci95'][1])}] & {pfmt(v['p_holm'])}{mark} \\")
-    L += [r"\bottomrule", r"\multicolumn{5}{@{}l}{\footnotesize $^{\ast}$Null hypothesis rejected.}", r"\end{tabular}", r"\end{table}"]
+    L += [r"\bottomrule", r"\multicolumn{5}{@{}l}{\footnotesize $^{\ast}$Null hypothesis rejected.}", r"\end{tabular}}", r"\end{table}"]
     return L
 
 
@@ -196,7 +197,7 @@ def table_methods(res: dict) -> list[str]:
     n = {k: res["cohorts"][k]["n"] for k in ("C1", "C2", "C3")}
     L = [r"\begin{table*}[!t]",
          r"\caption{All methods on the confirmatory cohorts. Regional change $R^2$ against the measured follow-up with 95\% subject-bootstrap intervals; composite MAE (SUVR) against the measured follow-up; regional RMSE (SUVR) against the noise-free follow-up. Deep models: mean over three seeds. Ablations are in Table~\ref{tab:ablation}.}",
-         r"\label{tab:methods}", r"\centering", r"\setlength{\tabcolsep}{4pt}", r"\begin{tabular}{@{}lccccccc@{}}", r"\toprule",
+         r"\label{tab:methods}", r"\centering", r"\setlength{\tabcolsep}{3.4pt}", r"\begin{tabular}{@{}lccccccc@{}}", r"\toprule",
          rf"& \multicolumn{{3}}{{c}}{{C1: in distribution, 1--4 y ($n={n['C1']}$)}} & \multicolumn{{2}}{{c}}{{C2: atypical pattern ($n={n['C2']}$)}} & \multicolumn{{2}}{{c}}{{C3: 6--8 y ($n={n['C3']}$)}} \\",
          r"\cmidrule(lr){2-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
          r"Method & $R^2$ [95\% CI] & MAE & RMSE$_\text{true}$ & $R^2$ [95\% CI] & RMSE$_\text{true}$ & $R^2$ [95\% CI] & RMSE$_\text{true}$ \\", r"\midrule"]
@@ -306,7 +307,7 @@ def fig_forest(res: dict, path: str):
         ax.axvline(0, color=INK2, lw=0.8)
         if title.startswith("(a)"):
             ax.axvline(-0.05, color=INK2, lw=0.8, ls=(0, (3, 2)))
-            ax.text(-0.052, len(rr) - 0.45, "NI margin", fontsize=6.5, color=INK2, ha="right", va="bottom")
+            ax.text(-0.056, len(rr) - 1.5, "NI\nmargin", fontsize=6.5, color=INK2, ha="right", va="center")
         ax.set_yticks(range(len(rr))); ax.set_yticklabels([r[0] for r in rr][::-1], fontsize=7)
         ax.set_xlim(xmin, hi_clip + 0.01); ax.set_ylim(-0.6, len(rr) - 0.4)
         ax.grid(axis="y", visible=False)
@@ -523,8 +524,8 @@ def main():
     opt = lambda f: json.load(open(os.path.join(a.results, f))) if os.path.exists(os.path.join(a.results, f)) else None
     sens, post = opt("sensitivity.json"), opt("posthoc.json")
     cal = json.load(open(os.path.join(a.results, "calibration.json")))
-    parity = {prec: json.load(open(os.path.join("runs_parity", prec, "ax_full_s1", "train_log.json")))
-              for prec in ("bf16", "fp32")}
+    pf = {prec: os.path.join("runs_parity", prec, "ax_full_s1", "train_log.json") for prec in ("bf16", "fp32")}
+    parity = {prec: json.load(open(f)) for prec, f in pf.items()} if all(map(os.path.exists, pf.values())) else None
     commits = {name: open(os.path.join("protocol", f)).read().split()[0][:7]
                for name, f in (("commitProtocol", "FREEZE_COMMIT.txt"), ("commitAnalysis", "ANALYSIS_COMMIT.txt"),
                                ("commitCohorts", "COHORT_COMMIT.txt"))}

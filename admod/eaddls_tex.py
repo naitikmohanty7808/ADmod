@@ -120,15 +120,15 @@ def table_assumed(r: dict) -> list[str]:
         ("Converters: onset", "uniform within 5--95\\% of follow-up"),
         ("CDR 0.5 / 1 / 2 from onset (y)", " / ".join(f"{x:g}" for x in A["cdr_steps_years_since_onset"])),
         ("eTIV, male / female (cc)", "normal (%.0f, %.0f) / (%.0f, %.0f)" % (*A["etiv_male_female_mean_sd"][0], *A["etiv_male_female_mean_sd"][1])),
-        ("nWBV at age 75", "normal, mean %.3f, SD %.3f; age slope %.4f\\,y$^{-1}$" % (*A["nwbv_at_75_mean_sd"], A["nwbv_age_slope_per_year"])),
-        ("nWBV aging rate (y$^{-1}$)", "normal, mean %.4f, SD %.4f" % tuple(A["nwbv_aging_rate_mean_sd"])),
+        ("nWBV at age 75", ("normal, mean %.3f, SD %.3f; age slope %.4f\\,y$^{-1}$" % (*A["nwbv_at_75_mean_sd"], A["nwbv_age_slope_per_year"])).replace("-", "$-$").replace("$^{$-$1}$", "$^{-1}$")),
+        ("nWBV aging rate (y$^{-1}$)", ("normal, mean %.4f, SD %.4f" % tuple(A["nwbv_aging_rate_mean_sd"])).replace("-", "$-$")),
         ("nWBV disease loss $A_i/(1+e^{-(s-m)/w})$", "$A_i$ gamma, shape %.0f, mean %.3f; $m=%g$, $w=%g$\\,y" % (*A["nwbv_disease_amplitude_gamma_shape_mean"], *A["nwbv_disease_midpoint_width"])),
         ("nWBV measurement noise", f"{100 * A['nwbv_relative_noise']:.1f}\\% relative"),
         ("MMSE", "%.1f minus decline from %.1f\\,y before onset at a gamma rate (shape %.0f, mean %.1f\\,y$^{-1}$)" % (A["mmse_ceiling"], A["mmse_decline_start_before_onset"], *A["mmse_decline_gamma_shape_mean_per_year"])),
         ("MMSE test error SD", "%.1f (CDR 0), %.1f (CDR $>$ 0); rounded, 0--30" % tuple(A["mmse_error_sd_unimpaired_impaired"])),
     ]
     T = [r"\begin{table}[t]", r"\centering",
-         r"\caption{Generative assumptions of the S1 cohort. None is fitted to data; only the group sizes and age range come from the OASIS-2 publication~\cite{marcus2010}.}",
+         r"\caption{Generative assumptions of the S1 cohort. None is fitted to data; only the group sizes and the minimum age of 60 years come from the OASIS-2 publication~\cite{marcus2010}.}",
          r"\label{tab:eaassumed}", r"\begin{tabular}{p{0.36\textwidth}p{0.58\textwidth}}", r"\toprule", r"Quantity & Assumption\\", r"\midrule"]
     T += [f"{a} & {b}\\\\" for a, b in rows]
     T += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]

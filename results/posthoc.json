@@ -1,0 +1,125 @@
+{
+ "note": "post hoc, descriptive; not part of the frozen protocol",
+ "train_bias_per_region": [
+  0.019380425686364645,
+  0.026827825130997122,
+  0.01770603624018994,
+  0.013829284971886938,
+  0.013132002818715441,
+  0.04910128064207978,
+  0.04547525303704398,
+  0.03489697634518801,
+  0.025658648092668136,
+  0.034847256901499986,
+  0.02611038973043253,
+  0.02201872998541528,
+  0.017249092295929625,
+  0.044482753499523624,
+  0.04162608332686372,
+  0.033342257960812076
+ ],
+ "train_bias_mean": 0.029105268541600678,
+ "reference": {
+  "C1": {
+   "noise_free_reference": 0.5423771290649619,
+   "bias_corrected_reference": 0.6076256410844731,
+   "admod": 0.43399508499582445
+  },
+  "C2": {
+   "noise_free_reference": 0.5665682456099503,
+   "bias_corrected_reference": 0.6181141296184374,
+   "admod": -0.35246680029508576
+  },
+  "C3": {
+   "noise_free_reference": 0.8109757944835323,
+   "bias_corrected_reference": 0.8282561954086771,
+   "admod": 0.2784925431092771
+  }
+ },
+ "p2_seed_pairings": {
+  "delta": [
+   [
+    0.010362817098679478,
+    0.014321554278274196,
+    0.011187646907339532
+   ],
+   [
+    -0.0050966004939840825,
+    -0.0011378633143893646,
+    -0.004271770685324028
+   ],
+   [
+    0.020052157940489312,
+    0.02401089512008403,
+    0.020876987749149367
+   ]
+  ],
+  "min": -0.0050966004939840825,
+  "max": 0.02401089512008403,
+  "n_positive": 6
+ },
+ "gap_bin_rmse": {
+  "1-2 y": {
+   "ADmod": 0.08709394492268885,
+   "Plain 3D U-Net": 0.08823458332647234,
+   "Cross-region ridge (2 scans)": 0.09110826078183117,
+   "Regional linear + WM (2 scans)": 0.10414828612775767,
+   "Noise ceiling": 0.08303311801907233,
+   "sd_measured_change": 0.11639918835114128
+  },
+  "2-3 y": {
+   "ADmod": 0.1001513459578084,
+   "Plain 3D U-Net": 0.1008990329597626,
+   "Cross-region ridge (2 scans)": 0.10356195644950857,
+   "Regional linear + WM (2 scans)": 0.11275143516038612,
+   "Noise ceiling": 0.0896392046267619,
+   "sd_measured_change": 0.12796717057545717
+  },
+  "3-4 y": {
+   "ADmod": 0.10240636983255554,
+   "Plain 3D U-Net": 0.10317450101050753,
+   "Cross-region ridge (2 scans)": 0.10383356938451398,
+   "Regional linear + WM (2 scans)": 0.11922685961989918,
+   "Noise ceiling": 0.08877354204180508,
+   "sd_measured_change": 0.13295345311489484
+  },
+  "6-8 y": {
+   "ADmod": 0.1645158838121695,
+   "Plain 3D U-Net": 0.2450559980795873,
+   "Cross-region ridge (2 scans)": 0.1396320757595078,
+   "Regional linear + WM (2 scans)": 0.16810367147658323,
+   "Noise ceiling": 0.08482361671643901,
+   "sd_measured_change": 0.19510036205001546
+  }
+ },
+ "timing": {
+  "ADmod": {
+   "median_sec_per_epoch": 10.5,
+   "median_minutes_per_100_epochs": 17.5
+  },
+  "Plain 3D U-Net": {
+   "median_sec_per_epoch": 9.4,
+   "median_minutes_per_100_epochs": 15.666666666666666
+  },
+  "ADmod without gap input": {
+   "median_sec_per_epoch": 10.3,
+   "median_minutes_per_100_epochs": 17.166666666666668
+  },
+  "ADmod without global context": {
+   "median_sec_per_epoch": 10.3,
+   "median_minutes_per_100_epochs": 17.166666666666668
+  },
+  "ADmod without region maps": {
+   "median_sec_per_epoch": 10.2,
+   "median_minutes_per_100_epochs": 16.999999999999996
+  },
+  "ADmod with one scan": {
+   "median_sec_per_epoch": 10.1,
+   "median_minutes_per_100_epochs": 16.833333333333332
+  },
+  "ADmod with direct head": {
+   "median_sec_per_epoch": 10.149999999999999,
+   "median_minutes_per_100_epochs": 16.916666666666664
+  }
+ }
+}
