@@ -1,0 +1,18 @@
+paused training 2026-11-17T01:12:12-08:00: python3 -m admod.eaddls
+resumed training 2026-11-17T01:21:53-08:00
+paused training 2026-11-17T01:22:48-08:00: python3 -m admod.explore_s2
+resumed training 2026-11-17T01:23:12-08:00
+paused training 2026-11-17T07:17:02-08:00: bash -c python3 -m admod.posthoc && python3 -m admod.confirm
+resumed training 2026-11-17T07:24:01-08:00
+paused training 2026-11-17T07:24:35-08:00: python3 -m admod.posthoc --analyze
+resumed training 2026-11-17T07:24:43-08:00
+paused training 2026-11-17T07:24:56-08:00: python3 -m admod.make_tex_ax --out ../paper_access
+resumed training 2026-11-17T07:25:00-08:00
+paused training 2026-11-17T07:52:33-08:00: python3 -m admod.eaddls --add-nommse
+resumed training 2026-11-17T07:53:38-08:00
+paused training 2026-11-17T07:58:26-08:00: python3 -m admod.make_tex_ax --out ../paper_access
+resumed training 2026-11-17T07:58:30-08:00
+paused training 2026-11-17T09:23:14-08:00: python3 -m admod.confirm --sensitivity
+resumed training 2026-11-17T09:24:19-08:00
+paused training 2026-11-17T09:24:50-08:00: python3 -m admod.make_tex_ax --out ../paper_access
+resumed training 2026-11-17T09:24:54-08:00

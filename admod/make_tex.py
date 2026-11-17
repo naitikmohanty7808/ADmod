@@ -15,7 +15,7 @@ def calib_macros(cal: dict) -> list[str]:
     acc = cal["accumulation"]
     m("accN", acc["n_subjects"])
     bins = acc["bins"]
-    lo, hi = bins[0], bins[-1]
+    lo, hi = bins[0], [b for b in bins if b["n"] >= 10][-1]  # highest bin with at least 10 subjects
     pk = max(bins, key=lambda b: b["rate"])
     m("accLowRate", f"{lo['rate']:.3f}"); m("accLowHi", f"{lo['hi']:.1f}"); m("accLowN", lo["n"])
     m("accPeakRate", f"{pk['rate']:.3f}"); m("accPeakLo", f"{pk['lo']:.1f}"); m("accPeakHi", f"{pk['hi']:.1f}"); m("accPeakN", pk["n"])

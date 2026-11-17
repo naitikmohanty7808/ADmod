@@ -190,6 +190,14 @@
    "Random forest": 0.8653333333333334,
    "AdaBoost": 0.8526666666666666,
    "EADDLS (MLP)": 0.8476666666666668
+  },
+  "v1_nocdr_nommse": {
+   "Logistic regression": 0.6286666666666666,
+   "SVM (RBF)": 0.6193333333333333,
+   "Decision tree": 0.6046666666666668,
+   "Random forest": 0.615,
+   "AdaBoost": 0.6223333333333334,
+   "EADDLS (MLP)": 0.6126666666666667
   }
  },
  "leak_detection_cdr_auc": {

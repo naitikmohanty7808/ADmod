@@ -36,7 +36,7 @@ VARIANT_KEYS = {"ax_full": "ADmod", "ax_plain": "Plain 3D U-Net", "ax_no_gap": "
                 "ax_no_global": "ADmod without global context", "ax_no_region": "ADmod without region maps",
                 "ax_one_scan": "ADmod with one scan", "ax_direct": "ADmod with direct head"}
 REMOVED = {"ax_full": "(none)", "ax_plain": "global context, region maps, coordinates, two heads",
-           "ax_no_gap": "gap channels and gap input to global MLP", "ax_no_global": "global context MLP",
+           "ax_no_gap": "gap channels ($g_0$, $g_1$); gap input to global MLP set to zero", "ax_no_global": "global context MLP",
            "ax_no_region": "region-mean maps", "ax_one_scan": "prior scan, its region map, $g_0$",
            "ax_direct": "two-head output (one head instead)"}
 COH = {"C1": "COne", "C2": "CTwo", "C3": "CThree"}
@@ -53,15 +53,19 @@ def sgn3(x):
 
 
 def pfmt(p):
-    if p < 1e-4:
-        return "$<$0.0001"
-    if p < 1e-3:
-        return f"{p:.4f}"
+    if p < 1e-3:  # with B = 10,000 the smallest one-sided bootstrap p is 1/(B+1); Holm multiplies it
+        return "$<$0.001"
     return f"{p:.3f}"
 
 
+def prel(p):
+    return "$<$\\,0.001" if p < 1e-3 else f"$=$\\,{p:.3f}"
+
+
 def pct(x, nd=0):
-    return f"{100 * x:.{nd}f}"
+    from decimal import ROUND_HALF_UP, Decimal
+    q = Decimal(1).scaleb(-nd)
+    return str(Decimal(repr(100 * x)).quantize(q, rounding=ROUND_HALF_UP))
 
 
 class Macros:
@@ -114,6 +118,7 @@ def number_macros(res: dict, sens: dict | None, post: dict | None, cal: dict, pa
         H = HYP[h]
         m(f"p{H}D", sgn3(v["delta_regional_r2"])); m(f"p{H}Lo", f3(v["ci95"][0])); m(f"p{H}Hi", f3(v["ci95"][1]))
         m(f"p{H}P", pfmt(v["p"])); m(f"p{H}Holm", pfmt(v["p_holm"])); m(f"p{H}Wil", pfmt(v["wilcoxon_p"]))
+        m(f"p{H}HolmRel", prel(v["p_holm"])); m(f"p{H}WilRel", prel(v["wilcoxon_p"]))
         m(f"p{H}Better", pct(v["frac_subjects_better"]))
         m(f"p{H}Rej", "rejected" if v["reject"] else "not rejected")
         m(f"p{H}Mae", sgn3(v["delta_composite_mae"])); m(f"p{H}Trmse", sgn3(v["delta_truth_rmse"]))
@@ -121,7 +126,8 @@ def number_macros(res: dict, sens: dict | None, post: dict | None, cal: dict, pa
     for k, v in res["ablation"].items():
         s = SHORT[k]
         m(f"a{s}D", sgn3(v["delta_regional_r2"])); m(f"a{s}Lo", f3(v["ci95"][0])); m(f"a{s}Hi", f3(v["ci95"][1]))
-        m(f"a{s}P", pfmt(v["p"])); m(f"a{s}Holm", pfmt(v["p_holm"])); m(f"a{s}Better", pct(v["frac_subjects_better"]))
+        m(f"a{s}P", pfmt(v["p"])); m(f"a{s}Holm", pfmt(v["p_holm"]))
+        m(f"a{s}PRel", prel(v["p"])); m(f"a{s}HolmRel", prel(v["p_holm"])); m(f"a{s}Better", pct(v["frac_subjects_better"]))
         m(f"a{s}Rej", "significant" if v["reject"] else "not significant")
     for cid, d in res["secondary_pairs"].items():
         C = COH[cid]
@@ -157,6 +163,14 @@ def number_macros(res: dict, sens: dict | None, post: dict | None, cal: dict, pa
             for k in ("ADmod", "Cross-region ridge (2 scans)", "Regional linear + WM (2 scans)", "Noise ceiling"):
                 m(f"sens{S}{SHORT[k]}", f3(d["methods"][k]["regional_r2"]["mean"]))
             m(f"sens{S}True", pct(d["variance_budget"]["true_change"]))
+        num = ["none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]
+        r2 = lambda d, k: d["methods"][k]["regional_r2"]["mean"]
+        best = [max(d["methods"], key=lambda k: -9 if k == "Noise ceiling" else r2(d, k)) for d in sens.values()]
+        m("sensN", len(sens))
+        m("sensRidgeOverAdmod", num[sum(r2(d, "Cross-region ridge (2 scans)") > r2(d, "ADmod") for d in sens.values())])
+        m("sensAdmodOverLWM", num[sum(r2(d, "ADmod") > r2(d, "Regional linear + WM (2 scans)") for d in sens.values())])
+        m("sensRidgeBest", num[sum(b == "Cross-region ridge (2 scans)" for b in best)])
+        m("sensNTrain", next(iter(sens.values())).get("n_train", 210))
     if post:
         for cid, d in post["reference"].items():
             m(f"ref{COH[cid]}", f3(d["noise_free_reference"])); m(f"refBias{COH[cid]}", f3(d["bias_corrected_reference"]))
@@ -285,7 +299,7 @@ def _style():
 def fig_forest(res: dict, path: str):
     plt = _style()
     prim = res["primary"]; abl = res["ablation"]
-    rows = [(f"{h}: vs {'RL+WM' if 'WM' in v['comparator'] else ('plain U-Net' if 'Plain' in v['comparator'] else 'ridge')} ({v['cohort']})",
+    rows = [(f"{h}: vs {'reg. linear + WM' if 'WM' in v['comparator'] else ('plain U-Net' if 'Plain' in v['comparator'] else 'ridge')} ({v['cohort']})",
              v["delta_regional_r2"], v["ci95"], v["reject"]) for h, v in prim.items()]
     arows = [(f"vs {TABLE_NAME[k].replace('w/o', 'without')}" if k != "Plain 3D U-Net" else "vs plain 3D U-Net",
               v["delta_regional_r2"], v["ci95"], v["reject"]) for k, v in abl.items()]
@@ -299,15 +313,16 @@ def fig_forest(res: dict, path: str):
             off = ci[1] > hi_clip
             x_hi = min(ci[1], hi_clip); x_d = min(d, hi_clip)
             ax.plot([ci[0], x_hi], [y, y], color=INK, lw=1.2, solid_capstyle="round")
-            ax.plot([x_d], [y], marker="o", ms=4.5, color=BLUE if rej else "white", mec=BLUE, mew=1.2, zorder=3)
+            if not off:
+                ax.plot([x_d], [y], marker="o", ms=4.5, color=BLUE if rej else "white", mec=BLUE, mew=1.2, zorder=3)
             if off:
                 ax.annotate(f"{d:+.2f} [{ci[0]:.2f}, {ci[1]:.2f}]", xy=(hi_clip, y), xytext=(hi_clip - 0.01, y + 0.33),
                             ha="right", va="center", fontsize=6.5, color=INK2)
-                ax.plot([hi_clip], [y], marker=">", ms=4, color=INK)
+                ax.plot([hi_clip], [y], marker=">", ms=5, color=BLUE if rej else "white", mec=BLUE, mew=1.2, zorder=3)
         ax.axvline(0, color=INK2, lw=0.8)
         if title.startswith("(a)"):
             ax.axvline(-0.05, color=INK2, lw=0.8, ls=(0, (3, 2)))
-            ax.text(-0.056, len(rr) - 1.5, "NI\nmargin", fontsize=6.5, color=INK2, ha="right", va="center")
+            ax.text(-0.056, len(rr) - 1.5, "margin", fontsize=6.5, color=INK2, ha="right", va="center")
         ax.set_yticks(range(len(rr))); ax.set_yticklabels([r[0] for r in rr][::-1], fontsize=7)
         ax.set_xlim(xmin, hi_clip + 0.01); ax.set_ylim(-0.6, len(rr) - 0.4)
         ax.grid(axis="y", visible=False)
@@ -332,7 +347,6 @@ def fig_gap(res: dict, path: str):
         y = [b[name][k]["mean"] for name, b in bins]
         lo = [b[name][k]["ci"][0] for name, b in bins]; hi = [b[name][k]["ci"][1] for name, b in bins]
         x = [v + dx for v in xs]
-        ax.plot(x[:3], y[:3], color=col, ls=ls, lw=1.2)
         ax.errorbar(x, y, yerr=[np.subtract(y, lo), np.subtract(hi, y)], fmt=mk, ms=4, color=col, mfc=col if k != "Noise ceiling" else "white",
                     elinewidth=0.9, capsize=0, label=labels[k], zorder=3)
     ax.set_xticks(xs); ax.set_xticklabels([f"{n.replace('-', chr(8211))}\n(n={b[n]['n']})" for n, b in bins], fontsize=7)
@@ -413,7 +427,7 @@ def supp_tables(res: dict, runs_dir: str, post: dict | None, out: str) -> list[s
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
     bins = [("1-2 y", "C1"), ("2-3 y", "C1"), ("3-4 y", "C1"), ("6-8 y", "C3")]
     L += [r"\begin{table}[h]", r"\centering",
-          r"\caption{Regional change $R^2$ by forecast gap with 95\% bootstrap intervals within each bin; in parentheses, regional-change RMSE (SUVR) against the measured follow-up (post hoc). Gaps of 1--4\,y come from C1, 6--8\,y from C3.}",
+          r"\caption{Regional change $R^2$ by forecast gap with 95\% bootstrap intervals within each bin; in parentheses, regional-change RMSE (SUVR) against the measured follow-up (post hoc). Gaps of 1--4\,y come from C1, 6--8\,y from C3. Intervals use 2000 resamples within each bin, so the 6--8\,y intervals differ slightly from those for C3 in the main text.}",
           r"\label{tab:gap}", r"\footnotesize", r"\setlength{\tabcolsep}{2.5pt}", r"\begin{tabular}{@{}lcccc@{}}", r"\toprule",
           "Method & " + " & ".join(f"{b.replace('-', '--')} ($n={res['cohorts'][c]['gap_bins'][b]['n']}$)" for b, c in bins) + r" \\", r"\midrule"]
     for k in ("ADmod", "Plain 3D U-Net", "ADmod with one scan", "Cross-region ridge (2 scans)", "Regional linear + WM (2 scans)", "Noise ceiling"):
@@ -509,8 +523,29 @@ def supp_repro() -> list[str]:
     for h, f in dig:
         L.append(r"\item " + tt(os.path.basename(f)) + r": {\footnotesize" + tt(h) + "}")
     L += [r"\end{itemize}", "", r"\textbf{Loss and restoration of the original repository.} " + open("protocol/RESTORATION.tex").read().strip(),
-          "", r"\textbf{Commands.} \texttt{python -m admod.dataset} (training and exploratory cohorts); \texttt{./run\_ax.sh} (sensitivity cohorts and all 33 training runs, resumable); \texttt{python -m admod.dataset --confirm}; \texttt{python -m admod.posthoc} (checks); \texttt{python -m admod.confirm}; \texttt{python -m admod.confirm --sensitivity}; \texttt{python -m admod.posthoc --analyze}; \texttt{python -m admod.make\_tex\_ax}. Seeds: generator seeds in Table~II of the main text; model seeds 0, 1, 2; bootstrap seed 2027.",
+          "", r"\textbf{Commands.} \texttt{python -m admod.dataset} (training and exploratory cohorts); \texttt{./run\_ax.sh} (sensitivity cohorts and all 35 training runs: 21 main, 12 sensitivity, 2 parity; resumable); \texttt{python -m admod.dataset --confirm}; \texttt{python -m admod.posthoc} (checks); \texttt{python -m admod.confirm}; \texttt{python -m admod.confirm --sensitivity}; \texttt{python -m admod.posthoc --analyze}; \texttt{python -m admod.make\_tex\_ax}; \texttt{python -m admod.eaddls} and \texttt{python -m admod.eaddls\_tex} (S1); \texttt{python -m admod.explore\_s2} (S2). Seeds: generator seeds in Table~2 of the main text; model seeds 0, 1, 2; bootstrap seed 2027.",
           "", r"\textbf{Released files.} Code, protocol, git history, trained checkpoints (\path{best.pt} for all 33 models), training logs, \path{results/confirm.json}, \path{results/sensitivity.json}, \path{results/posthoc.json}, and per-subject regional predictions of every method and seed on C1 to C3 (\path{results/confirm_regional.npz})."]
+    return L
+
+
+def table_secondary(res: dict) -> list[str]:
+    """Pre-specified secondary outcomes (protocol secondary_descriptive): voxel change R^2 and composite MAE on C1-C3."""
+    order = ["Copy last scan", "Regional trend (1 scan)", "Regional linear, rate only (2 scans)", "Regional linear (2 scans)",
+             "Regional linear + WM (2 scans)", "Cross-region ridge (2 scans)", "Plain 3D U-Net", "ADmod",
+             "ADmod without gap input", "ADmod without global context", "ADmod without region maps", "ADmod with one scan",
+             "ADmod with direct head", "Noise ceiling"]
+    L = [r"\begin{table}[h]", r"\centering",
+         r"\caption{Pre-specified secondary outcomes on the confirmatory cohorts: voxel-wise change $R^2$ (within cortical regions, pooled) and composite SUVR MAE against the measured follow-up. Deep models: mean over three seeds.}",
+         r"\label{tab:secondary}", r"\footnotesize", r"\begin{tabular}{@{}lcccccc@{}}", r"\toprule",
+         r"& \multicolumn{2}{c}{C1} & \multicolumn{2}{c}{C2} & \multicolumn{2}{c}{C3}\\",
+         r"Method & voxel $R^2$ & MAE & voxel $R^2$ & MAE & voxel $R^2$ & MAE\\", r"\midrule"]
+    for k in order:
+        cells = []
+        for c in ("C1", "C2", "C3"):
+            v = res["cohorts"][c]["methods"][k]
+            cells += [f3(v["voxel_r2"]["mean"]), f"{v['composite_mae']['mean']:.4f}"]
+        L.append(TABLE_NAME[k] + " & " + " & ".join(cells) + r"\\")
+    L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     return L
 
 
@@ -539,6 +574,7 @@ def main():
         w("table_sens.tex", table_sens(sens)); fig_sens(sens, os.path.join(a.out, "fig_sens.pdf"))
     w("supp/supp_tables.tex", supp_tables(res, a.runs, post, os.path.join(a.out, "supp")))
     w("supp/supp_repro.tex", supp_repro())
+    w("supp/table_secondary.tex", table_secondary(res))
     print("wrote", a.out)
 
 

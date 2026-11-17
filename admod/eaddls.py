@@ -54,6 +54,7 @@ FEATURES = {
     "demo_mri": ["age", "male", "educ", "ses", "etiv", "nwbv"],
     "v1_cdr": ["educ", "ses", "mmse", "cdr", "etiv", "nwbv", "asf"],
     "v1_nocdr": ["educ", "ses", "mmse", "etiv", "nwbv", "asf"],
+    "v1_nocdr_nommse": ["educ", "ses", "etiv", "nwbv", "asf"],
 }
 
 
@@ -210,7 +211,7 @@ def run(seed: int = 4100, repeats: int = 20, n_gt: int = 200, pop_n: int = 20000
     keep, y = task_labels(c1, "v1")
     res["replica"] = {"n_pos": int(y.sum()), "n_neg": int((1 - y).sum()),
                       "rule_cdr_acc": float(((c1["cdr"] > 0).astype(int) == y).mean())}
-    for fs in ("v1_cdr", "v1_nocdr"):
+    for fs in ("v1_cdr", "v1_nocdr", "v1_nocdr_nommse"):
         res["replica"][fs] = {nm: cv_scores(X_of(c1, FEATURES[fs]), y, nm, repeats, seed=seed)[1] for nm in names}
     # Leak condition: converters counted as not demented, CDR as an input
     _, yd = task_labels(c1, "detection")
@@ -274,7 +275,18 @@ def main():
     ap.add_argument("--out", default="results/eaddls.json")
     ap.add_argument("--repeats", type=int, default=20)
     ap.add_argument("--n-gt", type=int, default=200)
+    ap.add_argument("--add-nommse", action="store_true",
+                    help="add the replica without CDR and MMSE to an existing results file (same cohort and seeds)")
     a = ap.parse_args()
+    if a.add_nommse:
+        res = json.load(open(a.out))
+        c1 = first_visit(make_cohort(np.random.default_rng(res["seed"])))
+        _, y = task_labels(c1, "v1")
+        X = X_of(c1, FEATURES["v1_nocdr_nommse"])
+        res["replica"]["v1_nocdr_nommse"] = {nm: cv_scores(X, y, nm, res["repeats"], seed=res["seed"])[1] for nm in models(0)}
+        json.dump(res, open(a.out, "w"), indent=1)
+        print(res["replica"]["v1_nocdr_nommse"])
+        return
     res = run(repeats=a.repeats, n_gt=a.n_gt)
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     json.dump(res, open(a.out, "w"), indent=1)

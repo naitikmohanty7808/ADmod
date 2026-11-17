@@ -57,3 +57,14 @@ bin; median epoch times; and a same-session bfloat16 versus float32 parity run. 
   (thread contention). `side_run.sh` stops the training process (SIGSTOP), runs the side job and
   resumes training (SIGCONT); pauses are logged in `runs_ax/logs/pauses.log`. Training results do not
   depend on pauses; the affected epochs' wall times are inflated, which the median epoch time absorbs.
+
+## Order of events in the restored run
+
+- PROTOCOL.md step 2 places the 12 sensitivity models before confirmatory scoring. In the restored
+  run, the confirmatory cohorts were scored (2026-11-17 07:17 to 07:24 PST, `runs_ax/logs/pauses.log`)
+  after all 21 confirmatory models had finished and while the sensitivity models were training
+  (`noise_0.5` finished, `noise_1.0` in progress). The sensitivity models do not enter any
+  confirmatory comparison, and their training reads only `data/sens/<setting>/`.
+- The pre-specified secondary outcomes voxel change R^2 and composite MAE on C1 to C3 were computed
+  by the frozen analysis code; they are reported in Supplementary Table "secondary" (added after an
+  internal review noted that the manuscript draft omitted them).

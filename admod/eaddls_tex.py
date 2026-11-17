@@ -33,7 +33,7 @@ def macros(r: dict) -> list[str]:
     m("NNd", c["groups"][0]); m("NDem", c["groups"][1]); m("NConv", c["groups"][2])
     rp = r["replica"]
     m("VonePos", rp["n_pos"]); m("VoneNeg", rp["n_neg"]); m("RuleAcc", p0(rp["rule_cdr_acc"]))
-    for fs, K in (("v1_cdr", "Cdr"), ("v1_nocdr", "NoCdr")):
+    for fs, K in (("v1_cdr", "Cdr"), ("v1_nocdr", "NoCdr"), ("v1_nocdr_nommse", "NoMmse")):
         v = list(rp[fs].values())
         m(f"Vone{K}AccMin", p0(min(v))); m(f"Vone{K}AccMax", p0(max(v)))
         m(f"Vone{K}AccLR", p0(rp[fs]["Logistic regression"])); m(f"Vone{K}AccMLP", p0(rp[fs]["EADDLS (MLP)"]))
@@ -49,7 +49,7 @@ def macros(r: dict) -> list[str]:
         m(f"Best{T}", best[0]); m(f"BestAuc{T}", f2(best[1]["auc"]))
     vs = r["visit_split"]
     m("VisitRows", vs["n_rows"])
-    gains = {nm: vs[nm]["visit_folds"] - vs[nm]["subject_folds"] for nm in MODELS}
+    gains = {nm: round(vs[nm]["visit_folds"], 2) - round(vs[nm]["subject_folds"], 2) for nm in MODELS}  # as printed in the table
     m("VisitGainMin", f2(min(gains.values()))); m("VisitGainMax", f2(max(gains.values())))
     top = max(gains, key=gains.get)
     m("VisitTop", top); m("VisitTopV", f2(vs[top]["visit_folds"])); m("VisitTopS", f2(vs[top]["subject_folds"]))
