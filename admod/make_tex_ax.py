@@ -3,7 +3,7 @@
     python -m admod.make_tex_ax --out ../paper_access
 
 Reads results/confirm.json, results/sensitivity.json and results/posthoc.json (optional),
-results/calibration.json, results/bf16_parity.json and protocol/*_COMMIT.txt. Every number in the
+results/calibration.json, runs_parity/{bf16,fp32}/ax_full_s1/train_log.json and protocol/*_COMMIT.txt. Every number in the
 manuscript that comes from an experiment is a macro written here.
 """
 from __future__ import annotations
@@ -523,7 +523,8 @@ def main():
     opt = lambda f: json.load(open(os.path.join(a.results, f))) if os.path.exists(os.path.join(a.results, f)) else None
     sens, post = opt("sensitivity.json"), opt("posthoc.json")
     cal = json.load(open(os.path.join(a.results, "calibration.json")))
-    parity = json.load(open(os.path.join(a.results, "bf16_parity.json")))
+    parity = {prec: json.load(open(os.path.join("runs_parity", prec, "ax_full_s1", "train_log.json")))
+              for prec in ("bf16", "fp32")}
     commits = {name: open(os.path.join("protocol", f)).read().split()[0][:7]
                for name, f in (("commitProtocol", "FREEZE_COMMIT.txt"), ("commitAnalysis", "ANALYSIS_COMMIT.txt"),
                                ("commitCohorts", "COHORT_COMMIT.txt"))}
