@@ -39,7 +39,7 @@
 Added after an internal review of the methods, before any confirmatory scoring (`admod/posthoc.py`):
 a content-digest check of the confirmatory cohorts and a checkpoint check before scoring; a
 bias-corrected noise-free reference; the nine seed pairings for P2; regional RMSE per forecast-gap
-bin; median epoch times; and a same-session bfloat16 versus float32 parity run. All are descriptive.
+bin; median epoch times; and a same-session bfloat16 versus float32 parity run (the parity run itself was executed after confirmatory scoring and after the sensitivity runs, 09:22 to 10:14 PST). All are descriptive.
 
 ## Supplementary analyses after the loss (not part of the frozen protocol)
 

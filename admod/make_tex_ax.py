@@ -265,7 +265,7 @@ SENS_LABEL = {"noise_0.5": r"Noise $\times0.5$", "noise_1.0": r"Noise $\times1$"
 def table_sens(sens: dict) -> list[str]:
     L = [r"\begin{table}[!t]",
          r"\caption{Sensitivity analysis (descriptive). For each setting ADmod is retrained (seed 0) and the baselines are refit on 210 training subjects; test $n=120$. True: share of measured regional-change variance that is true change. $\Delta$: ADmod minus cross-region ridge, 95\% bootstrap interval.}",
-         r"\label{tab:sens}", r"\centering", r"\setlength{\tabcolsep}{2.2pt}", r"\begin{tabular}{@{}lcccccc@{}}", r"\toprule",
+         r"\label{tab:sens}", r"\centering", r"\setlength{\tabcolsep}{2.2pt}", r"\resizebox{\columnwidth}{!}{%", r"\begin{tabular}{@{}lcccccc@{}}", r"\toprule",
          r"Setting & True & ADmod & Ridge & RL+WM & Ref. & $\Delta$ vs.\ ridge \\", r"\midrule"]
     for s, d in sens.items():
         mm = d["methods"]
@@ -275,7 +275,7 @@ def table_sens(sens: dict) -> list[str]:
                  rf"{f3(mm['Noise ceiling']['regional_r2']['mean'])} & {sgn3(v['delta_regional_r2'])} [{f3(v['ci95'][0])}, {f3(v['ci95'][1])}] \\")
         if s in ("noise_2.0", "misreg_0.3", "rate_sd_high"):
             L.append(r"\addlinespace[2pt]")
-    L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    L += [r"\bottomrule", r"\end{tabular}}", r"\end{table}"]
     return L
 
 
@@ -524,7 +524,7 @@ def supp_repro() -> list[str]:
         L.append(r"\item " + tt(os.path.basename(f)) + r": {\footnotesize" + tt(h) + "}")
     L += [r"\end{itemize}", "", r"\textbf{Loss and restoration of the original repository.} " + open("protocol/RESTORATION.tex").read().strip(),
           "", r"\textbf{Commands.} \texttt{python -m admod.dataset} (training and exploratory cohorts); \texttt{./run\_ax.sh} (sensitivity cohorts and all 35 training runs: 21 main, 12 sensitivity, 2 parity; resumable); \texttt{python -m admod.dataset --confirm}; \texttt{python -m admod.posthoc} (checks); \texttt{python -m admod.confirm}; \texttt{python -m admod.confirm --sensitivity}; \texttt{python -m admod.posthoc --analyze}; \texttt{python -m admod.make\_tex\_ax}; \texttt{python -m admod.eaddls} and \texttt{python -m admod.eaddls\_tex} (S1); \texttt{python -m admod.explore\_s2} (S2). Seeds: generator seeds in Table~2 of the main text; model seeds 0, 1, 2; bootstrap seed 2027.",
-          "", r"\textbf{Released files.} Code, protocol, git history, trained checkpoints (\path{best.pt} for all 33 models), training logs, \path{results/confirm.json}, \path{results/sensitivity.json}, \path{results/posthoc.json}, and per-subject regional predictions of every method and seed on C1 to C3 (\path{results/confirm_regional.npz})."]
+          "", r"\textbf{Released files.} Code, protocol, git history, trained checkpoints (\path{best.pt} for all 35 runs: 21 main, 12 sensitivity, 2 parity), training logs, \path{results/confirm.json}, \path{results/sensitivity.json}, \path{results/posthoc.json}, and per-subject regional predictions of every method and seed on C1 to C3 (\path{results/confirm_regional.npz})."]
     return L
 
 
