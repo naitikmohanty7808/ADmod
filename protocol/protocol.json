@@ -1,0 +1,79 @@
+{
+  "title": "ADmod confirmatory evaluation protocol (IEEE Access revision)",
+  "status": "frozen before any confirmatory model was trained and before any confirmatory cohort was generated",
+  "data_are_synthetic": true,
+  "training_data": {
+    "train": "data/train.npz (364 subjects, generator seed 1)",
+    "val": "data/val.npz (52 subjects, generator seed 1)",
+    "note": "Same training and validation subjects as medRxiv v2. Validation is used for checkpoint selection and the ridge penalty only."
+  },
+  "exploratory_sets": ["data/test.npz", "data/stress_atypical.npz", "data/stress_long_gap.npz", "data/stress_long_gap_fresh.npz"],
+  "exploratory_note": "These sets were seen during development of ADmod and the baselines. Results on them are exploratory and are never used for confirmatory claims.",
+  "confirmatory_cohorts": {
+    "C1": {"file": "data/confirm_id.npz", "n": 400, "generator_seed": 21, "pattern": "typical", "forecast_gap_years": [1.0, 4.0]},
+    "C2": {"file": "data/confirm_atypical.npz", "n": 200, "generator_seed": 22, "pattern": "atypical", "forecast_gap_years": [1.0, 4.0]},
+    "C3": {"file": "data/confirm_long.npz", "n": 200, "generator_seed": 23, "pattern": "typical", "forecast_gap_years": [6.0, 8.0]}
+  },
+  "deep_models": {
+    "seeds": [0, 1, 2],
+    "variants": {
+      "ax_full": "ADmod",
+      "ax_plain": "Plain 3D U-Net: same backbone and gap channels; no global context, no region maps, no coordinates, direct head",
+      "ax_no_gap": "ADmod without gap channels and without gap input to the global MLP (two-head output still scales by the gap)",
+      "ax_no_global": "ADmod without the global context MLP",
+      "ax_no_region": "ADmod without region-mean maps",
+      "ax_one_scan": "ADmod given the baseline scan only",
+      "ax_direct": "ADmod with one correction head instead of fix + gap x rate"
+    },
+    "training_policy": {
+      "epochs": 100, "optimizer": "AdamW", "lr": 0.002, "weight_decay": 0.0001, "batch": 4,
+      "schedule": "cosine annealing to zero over 100 epochs", "augmentation": "left-right mirror, p = 0.5",
+      "checkpoint": "lowest validation loss", "precision": "bfloat16 autocast for training, float32 for all evaluation",
+      "width": 12, "threads": 2
+    },
+    "deep_model_score": "each metric is computed per seed and averaged over the 3 seeds"
+  },
+  "baselines": {
+    "fit_on": "train only",
+    "methods": ["Copy last scan", "Regional trend (1 scan)", "Regional linear (2 scans)", "Regional linear, rate only (2 scans)",
+                "Regional linear + WM (2 scans)", "Cross-region ridge (2 scans)"],
+    "ridge_lambda_grid": [0.0001, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0, 300.0, 1000.0],
+    "ridge_lambda_selection": "highest regional change R^2 on data/val.npz"
+  },
+  "primary_endpoint": {
+    "name": "regional change R^2 against the measured follow-up",
+    "definition": "Pool the predicted and measured baseline-to-follow-up change of every cortical region of every subject; R^2 = 1 - SSE / SST over that pool.",
+    "statistic": "Delta = R^2(ADmod) - R^2(comparator)",
+    "inference": "B = 10000 paired subject-bootstrap resamples (seed 2027), the same resample for both methods. One-sided p = (1 + #{Delta*_b <= delta0}) / (B + 1).",
+    "family": "Holm step-down over P1-P4, one-sided alpha = 0.025",
+    "hypotheses": {
+      "P1": {"cohort": "C1", "comparator": "Regional linear + WM (2 scans)", "type": "superiority", "delta0": 0.0},
+      "P2": {"cohort": "C1", "comparator": "Plain 3D U-Net", "type": "superiority", "delta0": 0.0},
+      "P3": {"cohort": "C1", "comparator": "Cross-region ridge (2 scans)", "type": "non-inferiority", "delta0": -0.05},
+      "P4": {"cohort": "C2", "comparator": "Cross-region ridge (2 scans)", "type": "superiority", "delta0": 0.0}
+    }
+  },
+  "ablation_family": {
+    "cohort": "C1",
+    "comparisons": ["ax_full vs ax_plain", "ax_full vs ax_no_gap", "ax_full vs ax_no_global", "ax_full vs ax_no_region",
+                    "ax_full vs ax_one_scan", "ax_full vs ax_direct"],
+    "inference": "same paired bootstrap; two-sided p = min(1, 2 min(P*(Delta <= 0), P*(Delta >= 0))) with the +1 correction",
+    "family": "Holm step-down over the 6 comparisons, two-sided alpha = 0.05",
+    "note": "ax_full vs ax_plain also appears as P2; inside this family it is tested two-sided."
+  },
+  "secondary_descriptive": [
+    "All methods on C1, C2, C3: regional change R^2, voxel change R^2, composite MAE, RMSE to the noise-free follow-up, with 95% bootstrap CIs",
+    "Paired Wilcoxon signed-rank test on per-subject squared regional-change error for every primary comparison",
+    "Fraction of subjects with lower error than each comparator",
+    "Regional change R^2 by forecast gap: 1-2, 2-3, 3-4 years (C1) and 6-8 years (C3)",
+    "Noise ceiling: the noise-free follow-up scored against the measured follow-up",
+    "Training time per model and inference time per subject"
+  ],
+  "sensitivity_descriptive": {
+    "models": "ax_full retrained with seed 0 under the same policy for each setting; baselines refit; ridge lambda chosen on the setting's validation split",
+    "split": "240-subject training cohort split 210 train / 30 validation by subject; separate 120-subject test cohort",
+    "settings": ["noise_0.5", "noise_1.0", "noise_1.5", "noise_2.0", "misreg_0.0", "misreg_0.1", "misreg_0.2", "misreg_0.3",
+                 "rate_sd_low (rho log-SD 0.10)", "rate_sd_high (rho log-SD 0.45)", "susc_flat (susceptibility^0.5)", "susc_steep (susceptibility^2)"]
+  },
+  "deviations": "Any change to this protocol after freezing is listed in protocol/DEVIATIONS.md and reported in the paper."
+}
