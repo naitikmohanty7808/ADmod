@@ -156,7 +156,7 @@ def number_macros(res: dict, sens: dict | None, post: dict | None, cal: dict, pa
         m("bfValRtwo", f"{r2at(b):.3f}"); m("fpValRtwo", f"{r2at(f):.3f}")
     for k, v in commits.items():
         m(k, v)
-    m("codeAvailability", "The code is provided with this submission as supplementary material.")
+    m("codeAvailability", r"They are available at \url{https://github.com/naitikmohanty7808/ADmod} and as supplementary material with this submission.")
     if sens:
         for s, d in sens.items():
             S = sens_name(s)
@@ -513,7 +513,8 @@ def supp_repro() -> list[str]:
     tt = lambda x: r"\texttt{" + x.replace("_", r"\_") + "}"
     full = lambda f: open(os.path.join("protocol", f)).read().split()[0]
     dig = [l.split() for l in open("protocol/CONFIRM_COHORT_DIGESTS.txt").read().strip().splitlines()]
-    L = [r"\textbf{Software.} Python " + platform.python_version() + f", PyTorch {torch.__version__.split('+')[0]}, NumPy {numpy.__version__}, SciPy {scipy.__version__}, scikit-learn {sklearn.__version__}.",
+    L = [r"\textbf{Repository.} Code, frozen protocol with its git history, result files, training logs and the 35 trained checkpoints: \url{https://github.com/naitikmohanty7808/ADmod}. The synthetic cohorts are regenerated from the generator seeds; the confirmatory cohorts are checked against the content digests below.",
+         r"\textbf{Software.} Python " + platform.python_version() + f", PyTorch {torch.__version__.split('+')[0]}, NumPy {numpy.__version__}, SciPy {scipy.__version__}, scikit-learn {sklearn.__version__}.",
          "", r"\textbf{Hardware.} Two cores of an Intel Xeon processor with AMX units; no GPU. Training used bfloat16 autocast; every evaluation used float32.",
          "", r"\textbf{Protocol commits} in the restored repository (included with the code; the original repository was lost, see below):", r"\begin{itemize}",
          r"\item protocol and training code: " + tt(full("FREEZE_COMMIT.txt")),
