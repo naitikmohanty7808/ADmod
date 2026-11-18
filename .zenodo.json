@@ -1,0 +1,14 @@
+{
+  "title": "ADmod: code, frozen protocol, results and trained models for amyloid-PET forecasting under simulated measurement error and distribution shift",
+  "upload_type": "software",
+  "description": "Code, frozen evaluation protocol with its git history, result files, training logs and the 35 trained checkpoints for the article \"ADmod: A Temporally Conditioned 3D Encoder-Decoder for Amyloid-PET Forecasting Under Simulated Measurement Error and Distribution Shift\" (submitted to IEEE Access). All data are synthetic and are regenerated from the generator seeds in protocol/protocol.json; the confirmatory cohorts are checked against the content digests in protocol/CONFIRM_COHORT_DIGESTS.txt. No human data are included.",
+  "creators": [
+    {"name": "Mohanty, Naitik", "affiliation": "Department of Mechanical Engineering, Massachusetts Institute of Technology"},
+    {"name": "Sarmadi, Morteza", "affiliation": "Department of Mechanical Engineering, Massachusetts Institute of Technology"}
+  ],
+  "license": "MIT",
+  "keywords": ["Alzheimer's disease", "amyloid PET", "deep learning", "longitudinal forecasting", "simulation", "reproducibility"],
+  "related_identifiers": [
+    {"identifier": "10.1101/2024.08.02.24311435", "relation": "isSupplementTo", "scheme": "doi"}
+  ]
+}

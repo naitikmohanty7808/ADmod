@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "ADmod: code, frozen protocol, results and trained models for amyloid-PET forecasting under simulated measurement error and distribution shift"
+type: software
+license: MIT
+authors:
+  - family-names: Mohanty
+    given-names: Naitik
+    affiliation: "Department of Mechanical Engineering, Massachusetts Institute of Technology"
+  - family-names: Sarmadi
+    given-names: Morteza
+    affiliation: "Department of Mechanical Engineering, Massachusetts Institute of Technology"
+repository-code: "https://github.com/naitikmohanty7808/ADmod"
+version: "1.0.0"
